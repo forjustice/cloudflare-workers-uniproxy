@@ -1,21 +1,21 @@
 # cloudflare-workers-uniproxy
-Universal Proxy based on Cloudflare Workers with pure GET request
+基于 Cloudflare Workers 的通用代理，仅支持纯 GET 请求。
 
-## Usage
+## 使用方法
 
-1. Simple HTTP GET:
+1. 简单的 HTTP GET 请求：
   ```
     https://uniproxy.misty.workers.dev/https://hookb.in/NOPV9r1YXlUe8mNN8ryq
   ```
   
-2. Passing header
+2. 传递 Header：
   ```
     https://uniproxy.misty.workers.dev/{"hello":"world"}/https://hookb.in/NOPV9r1YXlUe8mNN8ryq
   ```
 
-3. Passing body
+3. 传递 Body：
   ```
     https://uniproxy.misty.workers.dev/{"_method":"POST","_body":"helloworld"}/https://hookb.in/NOPV9r1YXlUe8mNN8ryq
   ```
   
-Goto https://hookbin.com/NOPV9r1YXlUe8mNN8ryq, and see the result ;)
+前往 https://hookbin.com/NOPV9r1YXlUe8mNN8ryq 查看结果 ;)
