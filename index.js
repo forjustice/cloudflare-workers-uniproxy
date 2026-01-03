@@ -29,7 +29,7 @@ function parseURL(url) {
     }
 
     headers = JSON.parse(headersbody)
-    
+
     return {
         url: real_url,
         headers: headers,
@@ -38,16 +38,18 @@ function parseURL(url) {
 
 async function handleRequest(request) {
     if (request.method == "OPTIONS") {
-        return new Response("", {status:200, headers:{
-            "Access-Control-Allow-Credentials": true,
-            "Access-Control-Allow-Headers": "*",
-            "Access-Control-Allow-Methods": "*",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Max-Age": "31536000",
-            "X-Request-Type": "CORS Preflight"
-        }});
+        return new Response("", {
+            status: 200, headers: {
+                "Access-Control-Allow-Credentials": true,
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Allow-Methods": "*",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Max-Age": "31536000",
+                "X-Request-Type": "CORS Preflight"
+            }
+        });
     }
-    
+
     let reqHeaders = new Headers(request.headers),
         outBody, outStatus = 200, outCt = null, outHeaders = new Headers({
             "Access-Control-Allow-Origin": "*",
@@ -88,9 +90,13 @@ async function handleRequest(request) {
                 fp.method = headers["_method"].toUpperCase()
             }
             fp.headers = Object.assign({}, fp.headers, headers)
-            
+
             if (["POST", "PUT", "PATCH", "DELETE"].indexOf(request.method) >= 0) {
                 const ct = (reqHeaders.get('content-type') || "").toLowerCase();
+                // 确保 Content-Type 被转发到目标服务器
+                if (ct) {
+                    fp.headers['content-type'] = reqHeaders.get('content-type');
+                }
                 if (ct.includes('application/json')) {
                     fp.body = JSON.stringify(await request.json());
                 } else if (ct.includes('application/text') || ct.includes('text/html')) {
