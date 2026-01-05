@@ -1,6 +1,67 @@
+// ==================== 白名单配置 ====================
+// 在此处添加允许代理访问的目标域名
+// 支持通配符: *.example.com 匹配所有子域名
+// 留空数组 [] 表示不限制（允许所有域名）
+const ALLOWED_TARGET_DOMAINS = [
+    'example.com',
+    'api.example.com',
+    '*.mydomain.com',
+];
+// ====================================================
+
 addEventListener('fetch', event => {
     event.respondWith(handleRequest(event.request))
 })
+
+/**
+ * 检查域名是否在白名单中
+ * @param {string} hostname - 要检查的域名
+ * @returns {boolean} - 是否允许访问
+ */
+function isAllowedDomain(hostname) {
+    // 如果白名单为空，允许所有域名
+    if (ALLOWED_TARGET_DOMAINS.length === 0) {
+        return true;
+    }
+
+    hostname = hostname.toLowerCase();
+
+    for (const pattern of ALLOWED_TARGET_DOMAINS) {
+        const lowerPattern = pattern.toLowerCase();
+
+        // 通配符匹配: *.example.com
+        if (lowerPattern.startsWith('*.')) {
+            const suffix = lowerPattern.slice(1); // .example.com
+            if (hostname.endsWith(suffix) || hostname === lowerPattern.slice(2)) {
+                return true;
+            }
+        }
+        // 精确匹配
+        else if (hostname === lowerPattern) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * 从 URL 中提取域名
+ * @param {string} url - 完整的 URL
+ * @returns {string} - 域名
+ */
+function extractHostname(url) {
+    try {
+        return new URL(url).hostname;
+    } catch {
+        // 如果 URL 没有协议，尝试添加后再解析
+        try {
+            return new URL('http://' + url).hostname;
+        } catch {
+            return '';
+        }
+    }
+}
 
 function parseURL(url) {
     let urlbody = url.substr(8);
@@ -72,6 +133,21 @@ async function handleRequest(request) {
         } else {
             if (url.toLowerCase().indexOf("http") == -1) {
                 url = "http://" + url;
+            }
+
+            // 白名单检查
+            const targetHostname = extractHostname(url);
+            if (!isAllowedDomain(targetHostname)) {
+                return new Response(JSON.stringify({
+                    code: 403,
+                    msg: "Access denied: domain '" + targetHostname + "' is not in the allowed list"
+                }), {
+                    status: 403,
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Access-Control-Allow-Origin": "*"
+                    }
+                });
             }
 
             let fp = {
