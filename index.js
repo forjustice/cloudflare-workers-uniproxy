@@ -112,7 +112,7 @@ async function handleRequest(request) {
     }
 
     let reqHeaders = new Headers(request.headers),
-        outBody, outStatus = 200, outCt = null, outHeaders = new Headers({
+        outBody, outStatus = 200, outCt = null, fr = null, outHeaders = new Headers({
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
             "Access-Control-Allow-Headers": reqHeaders.get('Access-Control-Allow-Headers') || "Accept, Authorization, Cache-Control, Content-Type, DNT, If-Modified-Since, Keep-Alive, Origin, User-Agent, X-Requested-With, Token, x-access-token"
@@ -187,7 +187,7 @@ async function handleRequest(request) {
                 fp.body = headers["_body"]
             }
 
-            let fr = (await fetch(url, fp));
+            fr = (await fetch(url, fp));
             outStatus = fr.status;
             outCt = fr.headers.get('content-type');
             outBody = fr.body;
@@ -203,6 +203,28 @@ async function handleRequest(request) {
 
     if (outCt && outCt != "") {
         outHeaders.set("content-type", outCt);
+    }
+
+    // 转发订阅相关的响应头（用于 Clash 显示流量和到期信息）
+    if (fr) {
+        const subscriptionHeaders = [
+            'subscription-userinfo',
+            'Subscription-Userinfo',
+            'profile-update-interval',
+            'Profile-Update-Interval',
+            'profile-title',
+            'Profile-Title',
+            'content-disposition',
+            'Content-Disposition'
+        ];
+
+        for (const headerName of subscriptionHeaders) {
+            const headerValue = fr.headers.get(headerName);
+            if (headerValue) {
+                outHeaders.set(headerName.toLowerCase(), headerValue);
+                console.log("Forwarding header: " + headerName + " = " + headerValue);
+            }
+        }
     }
 
     return new Response(outBody, {
