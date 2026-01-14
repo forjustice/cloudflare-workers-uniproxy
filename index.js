@@ -177,7 +177,12 @@ async function handleRequest(request) {
                     fp.body = JSON.stringify(await request.json());
                 } else if (ct.includes('application/text') || ct.includes('text/html')) {
                     fp.body = await request.text();
-                } else if (ct.includes('form')) {
+                } else if (ct.includes('application/x-www-form-urlencoded')) {
+                    // 保持 application/x-www-form-urlencoded 格式，不要转换为 FormData
+                    // FormData 会被自动转换为 multipart/form-data，导致后端无法解析
+                    fp.body = await request.text();
+                } else if (ct.includes('multipart/form-data')) {
+                    // 只有 multipart/form-data 才使用 formData()
                     fp.body = await request.formData();
                 } else {
                     fp.body = await request.blob();
@@ -193,11 +198,13 @@ async function handleRequest(request) {
             outBody = fr.body;
         }
     } catch (err) {
+        console.error("Proxy error:", err.stack || err);
         outStatus = 500
         outCt = "application/json";
+        // 不在响应中暴露堆栈信息，仅记录到日志
         outBody = JSON.stringify({
             code: -1,
-            msg: JSON.stringify(err.stack) || err
+            msg: err.message || "Internal proxy error"
         });
     }
 
